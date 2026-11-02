@@ -1,0 +1,66 @@
+x-common: &common
+  build: .
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - klinik-data:/app/data
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth:
+    <<: *common
+    command: ["node", "services/auth/index.js"]
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+
+  clinic:
+    <<: *common
+    command: ["node", "services/clinic/index.js"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+
+  notification:
+    <<: *common
+    command: ["node", "services/notification/index.js"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+
+  gateway:
+    <<: *common
+    command: ["node", "gateway/index.js"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth
+      - clinic
+      - notification
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      AUTH_URL: http://auth:4001
+      CLINIC_URL: http://clinic:4002
+      NOTIFICATION_URL: http://notification:4003
+
+volumes:
+  klinik-data:
