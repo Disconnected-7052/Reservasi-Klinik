@@ -1,0 +1,8 @@
+node_modules
+.env
+data/*.json
+data/*.lock
+.git
+docs
+test
+*.log
