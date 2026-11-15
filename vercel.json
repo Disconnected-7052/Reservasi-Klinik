@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": "frontend",
+  "rewrites": [
+    { "source": "/auth/:path*", "destination": "https://https://reservasi-klinik.onrender.com//auth/:path*" },
+    { "source": "/api/:path*", "destination": "https://https://reservasi-klinik.onrender.com//api/:path*" },
+    { "source": "/graphql", "destination": "https://https://reservasi-klinik.onrender.com//graphql" },
+    { "source": "/notifications/:path*", "destination": "https://https://reservasi-klinik.onrender.com//notifications/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    }
+  ]
+}
