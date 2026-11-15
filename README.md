@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-Jangan di push ke branch main dulu
-=======
 # Klinik Reservasi
 
 Sistem reservasi jadwal dokter berbasis arsitektur microservices untuk mata kuliah Web Service. Pasien memilih dokter dan jam praktik, dokter menyelesaikan pemeriksaan dengan catatan medis, admin memantau seluruh reservasi, dan layanan notifikasi mengirim konfirmasi serta pengingat secara asinkron.
@@ -102,4 +99,3 @@ scripts/        dev cluster, smoke test, pembuat .env, ekspor skema
 test/           pengujian otomatis
 docs/           dokumentasi
 ```
->>>>>>> c3959b0 (update)

@@ -1,4 +1,5 @@
 import os from 'node:os'
+import { fileURLToPath } from 'node:url'
 
 const prod = process.env.NODE_ENV === 'production'
 
@@ -45,7 +46,7 @@ export const config = {
   eventSecret: secret('EVENT_SECRET', 'dev-only-event-secret'),
   amqpUrl: process.env.AMQP_URL || '',
   queueName: process.env.QUEUE_NAME || 'klinik.events',
-  dataDir: process.env.DATA_DIR || new URL('../data/', import.meta.url).pathname,
+  dataDir: process.env.DATA_DIR || fileURLToPath(new URL('../data/', import.meta.url)),
   clients: {
     web: { secret: null },
     'clinic-service': { secret: secret('CLINIC_CLIENT_SECRET', 'dev-clinic-client-secret') }

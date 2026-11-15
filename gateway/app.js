@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import express from 'express'
 import helmet from 'helmet'
@@ -101,7 +102,7 @@ export function createGatewayApp({ resolver, log = line => console.log(JSON.stri
   forward('clinic', ['/api', '/graphql'], { protect: true })
   forward('notification', '/notifications', { protect: true })
 
-  const frontend = frontendDir || path.resolve(new URL('../frontend', import.meta.url).pathname)
+  const frontend = frontendDir || fileURLToPath(new URL('../frontend/', import.meta.url))
   app.use(express.static(frontend, { maxAge: config.prod ? '1h' : 0 }))
   app.get('*', (req, res) => res.sendFile(path.join(frontend, 'index.html')))
 
