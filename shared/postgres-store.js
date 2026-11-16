@@ -25,7 +25,7 @@ export async function createPostgresStore(name, defaults) {
   const db = getPool(), spec = specs[name]
   if (!spec) throw new Error(`Store tidak dikenal: ${name}`)
   const data = structuredClone(defaults)
-  for (const [key, [table, , , decode]] of Object.entries(spec)) {
+  for (const [key, [table, , , , decode]] of Object.entries(spec)) {
     const result = await db.query(`SELECT * FROM ${table}`)
     data[key] = result.rows.map(decode)
   }
