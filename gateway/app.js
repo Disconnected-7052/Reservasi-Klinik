@@ -8,6 +8,11 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 import { config } from '../shared/config.js'
 import { requireAuth } from '../shared/auth.js'
 
+//API documentation
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
+import YAML from 'yaml';
+
 const REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/
 const SERVICES = ['auth', 'clinic', 'notification']
 
@@ -15,6 +20,13 @@ export function createGatewayApp({ resolver, log = line => console.log(JSON.stri
   const app = express()
   app.disable('x-powered-by')
   app.set('trust proxy', config.trustProxy)
+
+  //API documentation
+  const swaggerDocument = YAML.parse(
+    fs.readFileSync('./swagger.yaml', 'utf8')
+  );
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.use((req, res, next) => {
     const incoming = req.get('x-request-id')
