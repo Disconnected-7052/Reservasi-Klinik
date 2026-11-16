@@ -99,3 +99,11 @@ scripts/        dev cluster, smoke test, pembuat .env, ekspor skema
 test/           pengujian otomatis
 docs/           dokumentasi
 ```
+
+## Render deployment with PostgreSQL
+
+The auth, clinic, and notification services persist their service documents in PostgreSQL (`app_documents.payload`, JSONB). Create a Render PostgreSQL database and set `DATABASE_URL` on each of those three services to the database's **Internal Database URL**. Set `PGSSLMODE=require` if required by the database provider; use `PGSSLMODE=disable` only for a local non-TLS PostgreSQL instance. `PG_POOL_MAX` is optional (default 5).
+
+Deploy the Node services as Render Web Services using the repository and these start commands: `node services/registry/index.js`, `node services/auth/index.js`, `node services/clinic/index.js`, `node services/notification/index.js`, and `node gateway/index.js`. Configure each service's port and inter-service URL/secret variables according to `.env.example`; set `NODE_ENV=production`, strong unique secrets, `TRUST_PROXY=1`, and the correct public `CORS_ORIGINS`. Configure `REGISTRY_URL` and service URLs for the deployed topology. RabbitMQ remains a separate managed broker; set `AMQP_URL` on clinic and notification services.
+
+The old `data/*.json` files are no longer read by the production service entrypoints. Back up and import any existing records before switching production traffic; this change initializes empty PostgreSQL documents and does not automatically migrate old JSON contents.
