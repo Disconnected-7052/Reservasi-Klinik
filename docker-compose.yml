@@ -1,0 +1,134 @@
+x-common: &common
+  build: .
+  image: klinik-reservasi:1.0.0
+  env_file: .env
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 15s
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-probe: &probe
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 10s
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  registry:
+    <<: *common
+    command: ["node", "services/registry/index.js"]
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      <<: *probe
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  auth:
+    <<: *common
+    command: ["node", "services/auth/index.js"]
+    volumes:
+      - klinik-data:/app/data
+    depends_on:
+      registry:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      REGISTRY_URL: http://registry:4000
+    deploy:
+      replicas: 2
+    healthcheck:
+      <<: *probe
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  clinic:
+    <<: *common
+    command: ["node", "services/clinic/index.js"]
+    volumes:
+      - klinik-data:/app/data
+    depends_on:
+      registry:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      REGISTRY_URL: http://registry:4000
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+    deploy:
+      replicas: 2
+    healthcheck:
+      <<: *probe
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  notification:
+    <<: *common
+    command: ["node", "services/notification/index.js"]
+    volumes:
+      - klinik-data:/app/data
+    depends_on:
+      registry:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      REGISTRY_URL: http://registry:4000
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+    deploy:
+      replicas: 2
+    healthcheck:
+      <<: *probe
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  gateway:
+    <<: *common
+    command: ["node", "gateway/index.js"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      registry:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      clinic:
+        condition: service_healthy
+      notification:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      REGISTRY_URL: http://registry:4000
+      AUTH_URL: http://auth:4001
+      CLINIC_URL: http://clinic:4002
+      NOTIFICATION_URL: http://notification:4003
+    healthcheck:
+      <<: *probe
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+volumes:
+  klinik-data:
+  rabbitmq-data:

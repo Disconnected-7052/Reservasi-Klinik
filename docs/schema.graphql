@@ -1,0 +1,59 @@
+# Skema GraphQL Reservasi Klinik
+# Endpoint: POST {BASE_URL}/graphql  (header: Authorization: Bearer <access_token>)
+# Contoh query/mutation ada di docs/API.md bagian "GraphQL".
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+  COMPLETED
+}
+
+type Doctor {
+  id: ID!
+  name: String!
+  specialty: String!
+  room: String!
+  days: [Int!]!        # 0=Minggu, 1=Senin, ... 6=Sabtu
+}
+
+type Slot {
+  time: String!        # HH:MM, zona WIB
+  available: Boolean!
+}
+
+type Appointment {
+  id: ID!
+  patientId: ID!
+  patientName: String!
+  doctorId: ID!
+  doctorName: String!
+  specialty: String!
+  room: String!
+  date: String!        # YYYY-MM-DD
+  slot: String!
+  status: AppointmentStatus!
+  complaint: String
+  note: String
+  createdAt: String!
+}
+
+input BookingInput {
+  doctorId: ID!
+  date: String!
+  slot: String!
+  complaint: String    # maks. 500 karakter
+}
+
+type Query {
+  doctors(specialty: String): [Doctor!]!
+  doctor(id: ID!): Doctor
+  availability(doctorId: ID!, date: String!): [Slot!]!
+  appointments(status: AppointmentStatus): [Appointment!]!
+  appointment(id: ID!): Appointment
+}
+
+type Mutation {
+  bookAppointment(input: BookingInput!): Appointment!
+  cancelAppointment(id: ID!): Appointment!
+  completeAppointment(id: ID!, note: String!): Appointment!   # hanya dokter
+}

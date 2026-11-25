@@ -1,0 +1,372 @@
+
+openapi: 3.0.3
+
+info:
+  title: RevKlinik API
+  description: |
+    REST API documentation for RevKlinik Clinic Reservation System.
+    The API is accessed through the API Gateway.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://reservasiklinik.vercel.app
+    description: Deployment (URL resmi serah-terima)
+
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Doctors
+  - name: Appointments
+  - name: Notifications
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+        scope:
+          type: string
+        refresh_token:
+          type: string
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        doctorId:
+          type: string
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        status:
+          type: string
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Check gateway health
+      responses:
+        "200":
+          description: Gateway is healthy
+
+  /status:
+    get:
+      tags: [Health]
+      summary: Check service discovery status
+      responses:
+        "200":
+          description: Service status
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a patient account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                  maxLength: 80
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "201":
+          description: Account created
+        "400":
+          description: Invalid input
+        "409":
+          description: Email already registered
+
+  /auth/oauth/token:
+    post:
+      tags: [Authentication]
+      summary: Obtain an access token
+      description: Supports password, refresh_token, and client_credentials grants.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [grant_type]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [password, refresh_token, client_credentials]
+                username:
+                  type: string
+                password:
+                  type: string
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        "400":
+          description: Invalid grant or request
+        "401":
+          description: Invalid client credentials
+        "429":
+          description: Too many requests
+
+  /auth/oauth/revoke:
+    post:
+      tags: [Authentication]
+      summary: Revoke a refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Revocation processed
+
+  /auth/oauth/userinfo:
+    get:
+      tags: [Authentication]
+      summary: Get authenticated user information
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User information
+        "401":
+          description: Unauthorized
+
+  /api/doctors:
+    get:
+      tags: [Doctors]
+      summary: List doctors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: specialty
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Doctor list
+        "401":
+          description: Unauthorized
+
+  /api/doctors/{id}/slots:
+    get:
+      tags: [Doctors]
+      summary: Get doctor appointment slots
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Available appointment slots
+
+  /api/appointments:
+    post:
+      tags: [Appointments]
+      summary: Create an appointment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Appointment fields required by the clinic service.
+      responses:
+        "201":
+          description: Appointment created
+        "400":
+          description: Invalid appointment
+        "401":
+          description: Unauthorized
+
+    get:
+      tags: [Appointments]
+      summary: List appointments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Appointment list
+
+  /api/appointments/{id}:
+    get:
+      tags: [Appointments]
+      summary: Get appointment details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Appointment details
+        "404":
+          description: Appointment not found
+
+  /api/appointments/{id}/cancel:
+    patch:
+      tags: [Appointments]
+      summary: Cancel an appointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Appointment cancelled
+        "404":
+          description: Appointment not found
+
+  /api/appointments/{id}/complete:
+    patch:
+      tags: [Appointments]
+      summary: Mark appointment as completed
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Appointment completed
+        "401":
+          description: Unauthorized
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Notification list and unread count
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked as read
+        "404":
+          description: Notification not found
+
+  /graphql:
+    post:
+      tags: [Appointments]
+      summary: Clinic GraphQL endpoint
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                variables:
+                  type: object
+      responses:
+        "200":
+          description: GraphQL response
+
