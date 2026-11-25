@@ -20,8 +20,12 @@
     "smoke": "node scripts/smoke.js",
     "db:schema": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f migrations/001_schema.sql",
     "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f migrations/002_seed_data.sql",
+<<<<<<< HEAD
     "db:setup": "npm run db:schema && npm run db:seed",
     "db:reset": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f migrations/000_reset_data.sql && npm run db:seed"
+=======
+    "db:setup": "npm run db:schema && npm run db:seed"
+>>>>>>> 9816fbda00f8323c9574b62a6a8ab12ef44cbd94
   },
   "dependencies": {
     "amqplib": "^0.10.4",

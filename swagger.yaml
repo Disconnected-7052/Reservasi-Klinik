@@ -11,8 +11,13 @@ info:
 servers:
   - url: http://localhost:8080
     description: Local development
+<<<<<<< HEAD
   - url: https://reservasiklinik.vercel.app
     description: Deployment (URL resmi serah-terima)
+=======
+  - url: https://YOUR-RENDER-GATEWAY.onrender.com
+    description: Render deployment
+>>>>>>> 9816fbda00f8323c9574b62a6a8ab12ef44cbd94
 
 tags:
   - name: Health

@@ -27,7 +27,10 @@ export function createGatewayApp({ resolver, log = line => console.log(JSON.stri
   );
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+<<<<<<< HEAD
   app.get('/openapi.yaml', (req, res) => res.type('application/yaml').send(fs.readFileSync('./swagger.yaml', 'utf8')));
+=======
+>>>>>>> 9816fbda00f8323c9574b62a6a8ab12ef44cbd94
 
   app.use((req, res, next) => {
     const incoming = req.get('x-request-id')
